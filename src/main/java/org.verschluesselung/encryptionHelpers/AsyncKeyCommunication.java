@@ -1,4 +1,4 @@
-package org.verschluesselung;
+package org.verschluesselung.encryptionHelpers;
 
 import javax.crypto.Cipher;
 import java.security.KeyPair;

@@ -2,6 +2,8 @@ package org.verschluesselung;
 
 import junit.framework.Assert;
 import org.junit.Test;
+import org.verschluesselung.encryptionHelpers.AsyncKeyCommunication;
+import org.verschluesselung.encryptionHelpers.SharedKeyCommunication;
 
 import java.security.PublicKey;
 

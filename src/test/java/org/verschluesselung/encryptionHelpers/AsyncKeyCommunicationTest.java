@@ -1,6 +1,7 @@
-package org.verschluesselung;
+package org.verschluesselung.encryptionHelpers;
 
 import org.junit.Test;
+import org.verschluesselung.encryptionHelpers.AsyncKeyCommunication;
 
 import static org.junit.Assert.*;
 

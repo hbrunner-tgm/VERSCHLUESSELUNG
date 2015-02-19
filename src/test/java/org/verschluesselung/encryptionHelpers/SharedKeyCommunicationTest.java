@@ -1,7 +1,7 @@
-package org.verschluesselung;
+package org.verschluesselung.encryptionHelpers;
 
 import org.junit.Test;
-import org.verschluesselung.SharedKeyCommunication;
+import org.verschluesselung.encryptionHelpers.SharedKeyCommunication;
 
 import java.security.NoSuchAlgorithmException;
 
