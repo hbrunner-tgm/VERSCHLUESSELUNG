@@ -29,6 +29,7 @@ public class ConnectServer implements Runnable {
     private Message message;
 
     private Message m;
+    private KeyPair MyKeyPair;
 
     public ConnectServer(int port, String message, boolean secure) throws
             NoSuchPaddingException,
@@ -83,20 +84,18 @@ public class ConnectServer implements Runnable {
             InvalidAlgorithmParameterException,
             UnsupportedEncodingException {
 
-        String message = "Just Read the Instructions";
-
-        message= s;
+        String message = s;
 
         // generate Public and Private Key
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         SecureRandom random = SecureRandom.getInstanceStrong();
 
         keyPairGenerator.initialize(2048, random);
-        KeyPair keyPair = keyPairGenerator.generateKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
+        MyKeyPair = keyPairGenerator.generateKeyPair();
+        PublicKey publicKey = MyKeyPair.getPublic();
+        PrivateKey privateKey = MyKeyPair.getPrivate();
 
-        // generates synchronous public key
+
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(128);
         SecretKey secretKey = keyGen.generateKey();
