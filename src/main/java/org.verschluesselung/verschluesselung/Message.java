@@ -2,6 +2,8 @@ package org.verschluesselung.verschluesselung;
 
 import javax.crypto.SecretKey;
 import java.io.Serializable;
+import java.security.PublicKey;
+import java.util.Objects;
 
 /**
  * A class which contains the message and the public key which will be send over the network
@@ -11,17 +13,15 @@ import java.io.Serializable;
 public class Message implements Serializable {
 
     private String message;
-    private byte[] keyPub;
-    private String sk;
+    private Object object;
 
     public Message() {
     }
 
-    public Message(String message, byte[] keyPub, String sk) {
+    public Message(String message, Object object) {
 
         this.message= message;
-        this.keyPub= keyPub;
-        this.sk= sk;
+        this.object= object;
 
     }
 
@@ -29,12 +29,7 @@ public class Message implements Serializable {
         return message;
     }
 
-    public byte[] getKeyPub() {
-        return keyPub;
+    public Object getObject() {
+        return object;
     }
-
-    public String getSk() {
-        return sk;
-    }
-
 }

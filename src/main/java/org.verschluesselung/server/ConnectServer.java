@@ -10,6 +10,9 @@ import java.security.*;
 import java.util.Base64;
 
 import org.apache.log4j.*;
+import org.apache.log4j.or.ThreadGroupRenderer;
+import org.verschluesselung.encryptionHelpers.AsyncKeyCommunication;
+import org.verschluesselung.encryptionHelpers.SharedKeyCommunication;
 import org.verschluesselung.verschluesselung.Message;
 
 import javax.crypto.*;
@@ -26,28 +29,28 @@ public class ConnectServer implements Runnable {
     private static Logger log= Logger.getLogger(ConnectServer.class.getName());
 
     private int port;
+    private String host= "localhost", text;
     private Message message;
 
     private Message m;
     private KeyPair MyKeyPair;
 
-    public ConnectServer(int port, String message, boolean secure) throws
-            NoSuchPaddingException,
-            UnsupportedEncodingException,
-            InvalidAlgorithmParameterException,
-            NoSuchAlgorithmException,
-            IllegalBlockSizeException,
-            BadPaddingException,
-            InvalidKeyException {
+    private AsyncKeyCommunication serverAsyncKey;
+    private SharedKeyCommunication serverSharedKeyCommunication;
+
+    private SocketChannel sChannel;
+
+    public ConnectServer(int port, String message, boolean secure) {
 
         this.port= port;
+        this.text= message;
 
         if(secure)
             this.message= this.secure(message);
         else
-            this.message= new Message(message, null, null);
+            this.message= new Message(message, null);
 
-        log.info(message + "");
+        log.info("Message: "+ message);
     }
 
     @Override
@@ -61,73 +64,129 @@ public class ConnectServer implements Runnable {
             ssChannel.socket().bind(new InetSocketAddress(port));
 
             while (true) {
-                SocketChannel sChannel = ssChannel.accept();
+                sChannel = ssChannel.accept();
 
                 ObjectOutputStream oos = new ObjectOutputStream(sChannel.socket().getOutputStream());
-                oos.writeObject(message);
-                oos.close();
 
-                log.info("Connection ended");
+                oos.writeObject(this.generatePublickey()); // the public key
+
+                if( sChannel.isOpen() ) {
+                    break;
+                }
+                oos.close();
+            }
+            log.info("Public key sent");
+
+            ssChannel.close();
+            ssChannel= null;
+
+            try {
+                Thread.sleep(100l);
+            } catch (InterruptedException e) {
+                log.error(e);
             }
 
+            SocketChannel sChannel= SocketChannel.open();
+            sChannel.configureBlocking(true);
+            if (sChannel.connect(new InetSocketAddress(host, port + 1))) {
+
+                ObjectInputStream ois = new ObjectInputStream(sChannel.socket().getInputStream());
+
+                Message s = (Message) ois.readObject();
+
+                if(s.getMessage().equals("sharedkey")) {
+                    log.info("SharedKey recevied");
+                    this.genSharedKey( (byte[]) s.getObject() );
+                }
+            }
+            sChannel.close();
+
+            log.info("Message will be send");
+            //sChannel= null;
+            ssChannel = ServerSocketChannel.open();
+            ssChannel.configureBlocking(true);
+            ssChannel.socket().bind(new InetSocketAddress(port+2));
+
+            while (true) {
+                sChannel = ssChannel.accept();
+
+                ObjectOutputStream oos = new ObjectOutputStream(sChannel.socket().getOutputStream());
+
+                Message en= this.secure(text);
+                log.info("Uncrpyted Message send: " + text);
+                log.info("Encrpyted Message send: " + en.getObject().toString());
+
+                oos.writeObject(en); // the message
+
+                oos.close();
+
+                if(sChannel.isOpen() )
+                    break;
+            }
+            ssChannel.close();
+
         } catch (IOException e) {
+            log.error(e);
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
             log.error(e);
         }
     }
 
-    public Message secure(String s) throws
-            NoSuchAlgorithmException,
-            NoSuchPaddingException,
-            InvalidKeyException,
-            BadPaddingException,
-            IllegalBlockSizeException,
-            InvalidAlgorithmParameterException,
-            UnsupportedEncodingException {
+    public Message generatePublickey() {
+        //Server
+        //The server generates a private + public key
+        serverAsyncKey = null;
+        try {
+            serverAsyncKey = new AsyncKeyCommunication();
+        } catch (Exception e) {
+            log.error(e);
+        }
+        //The public key ( serverAsyncKey.getPublicKey() )is sent to the client
+        PublicKey transmittedPublicKey = serverAsyncKey.getPublicKey();
 
-        String message = s;
-
-        // generate Public and Private Key
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        SecureRandom random = SecureRandom.getInstanceStrong();
-
-        keyPairGenerator.initialize(2048, random);
-        MyKeyPair = keyPairGenerator.generateKeyPair();
-        PublicKey publicKey = MyKeyPair.getPublic();
-        PrivateKey privateKey = MyKeyPair.getPrivate();
-
-
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(128);
-        SecretKey secretKey = keyGen.generateKey();
-
-        // uses public key from client to encrypt synchronous public key
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        byte[] encryptedData = cipher.doFinal(secretKey.getEncoded());
-
-        // DECRYPTION of AES Key
-        cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        SecretKey aesKey = new SecretKeySpec(cipher.doFinal(encryptedData), "AES");
-
-        // use the AES key for encrypting a message
-        cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        byte[] iv = new byte[16];
-        random = new SecureRandom();
-        random.nextBytes(iv);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-        cipher.init(Cipher.ENCRYPT_MODE, aesKey, ivParameterSpec);
-        encryptedData = cipher.doFinal(message.getBytes("UTF-8"));
-        String encrypted = new String(encryptedData);
-        log.info("encrypted aes message: " + encrypted);
-
-        log.info("Public Key: " + publicKey.toString());
-
-        // get base64 encoded version of the key
-        String encodedKey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
-
-        m= new Message(encrypted, aesKey.getEncoded(), encodedKey );
-
-        return m;
+        return new Message("pubkey", transmittedPublicKey);
     }
+
+    public void genSharedKey(byte[] transmittedEncryptedSharedKey) {
+
+        //Server
+        //The server decrypts the encrypted shared key, using its private key
+        byte[] decryptedSharedKey = new byte[0];
+        try {
+            decryptedSharedKey = serverAsyncKey.decrypt(transmittedEncryptedSharedKey);
+        } catch (Exception e) {
+            log.error(e);
+        }
+        //The server uses the decrypted shared key for further encrypted communication
+        serverSharedKeyCommunication = new SharedKeyCommunication(decryptedSharedKey);
+
+    }
+
+    public Message secure(String s) {
+
+        //Server
+        String messageFromServer = s;
+        //The server encrypts the message using the shared key
+        byte[] encryptedMsgFromServer = new byte[0];
+        try {
+            encryptedMsgFromServer = serverSharedKeyCommunication.encrypt(messageFromServer.getBytes());
+        } catch (NoSuchPaddingException e) {
+            log.error(e);
+        } catch (NoSuchAlgorithmException e) {
+            log.error(e);
+        } catch (InvalidKeyException e) {
+            log.error(e);
+        } catch (BadPaddingException e) {
+            log.error(e);
+        } catch (IllegalBlockSizeException e) {
+            log.error(e);
+        }
+        //The server transmits this message to the client
+        byte[] transmittedMsgFromServer = encryptedMsgFromServer;
+
+        return new Message("message", transmittedMsgFromServer);
+    }
+
+
 }
