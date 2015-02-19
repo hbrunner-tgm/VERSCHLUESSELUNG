@@ -91,7 +91,6 @@ public class ConnectClient implements Runnable {
                 e.printStackTrace();
             }
 
-
             sChannel = SocketChannel.open();
             sChannel.configureBlocking(true);
             if (sChannel.connect(new InetSocketAddress(host, port + 2))) {
@@ -115,10 +114,8 @@ public class ConnectClient implements Runnable {
             log.error(e);
         } catch (IOException e) {
             log.error(e);
-            e.printStackTrace();
         } catch (Exception e) {
             log.error(e);
-            e.printStackTrace();
         }
 
     }

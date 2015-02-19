@@ -127,7 +127,6 @@ public class ConnectServer implements Runnable {
 
         } catch (IOException e) {
             log.error(e);
-            e.printStackTrace();
         } catch (ClassNotFoundException e) {
             log.error(e);
         }
