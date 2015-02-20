@@ -4,16 +4,11 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-
 import java.security.*;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 
 import org.apache.log4j.Logger;
 
 import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.verschluesselung.encryptionHelpers.AsyncKeyCommunication;
 import org.verschluesselung.encryptionHelpers.SharedKeyCommunication;
@@ -102,7 +97,7 @@ public class ConnectClient implements Runnable {
 
                     byte[] en= (byte[]) s.getObject();
 
-                    log.info("Encrypted Message received: " + en);
+                    log.info("Encrypted Message received: " + new String(en) );
 
                     String message = this.decrypt(en);
                     log.info("Unencrypted Message received: " + message);
