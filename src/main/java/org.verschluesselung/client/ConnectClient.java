@@ -112,6 +112,7 @@ public class ConnectClient implements Runnable {
                 Thread.sleep(1000l);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                return;
             }
 
             sChannel = SocketChannel.open();

@@ -109,6 +109,7 @@ public class ConnectServer implements Runnable {
                 Thread.sleep(100l);
             } catch (InterruptedException e) {
                 log.error(e);
+                return;
             }
 
             SocketChannel sChannel= SocketChannel.open();
