@@ -112,7 +112,7 @@ public class ConnectServer implements Runnable {
 
                 Message en= this.secure(text);
                 log.info("Uncrpyted Message send: " + text);
-                log.info("Encrpyted Message send: " + en.getObject().toString());
+                log.info("Encrpyted Message send: " + new String((byte[]) en.getObject()));
 
                 oos.writeObject(en); // the message
 

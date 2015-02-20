@@ -101,7 +101,7 @@ public class ConnectClient implements Runnable {
 
                     byte[] en= (byte[]) s.getObject();
 
-                    log.info("Encrypted Message received: " + en);
+                    log.info("Encrypted Message received: " + new String(en) );
 
                     String message = this.decrypt(en);
                     log.info("Unencrypted Message received: " + message);
