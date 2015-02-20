@@ -144,6 +144,11 @@ public class ConnectClient implements Runnable {
 
     }
 
+    /**
+     * Create the sharedkey
+     * @param publicKey the public key from the server
+     * @return a message which contains the sharedkey
+     */
     public Message response(PublicKey publicKey) {
         Message m = null;
 
@@ -170,12 +175,19 @@ public class ConnectClient implements Runnable {
         return new Message("sharedkey", transmittedEncryptedSharedKey);
     }
 
+    /**
+     * A method to decrypt the message
+     * @param message the message als byte[]
+     * @return the message as a String
+     */
     public String decrypt(byte[] message) {
         //Client
         //The client decrypts the message
         byte[] decryptedMsgFromServer = new byte[0];
         try {
+
             decryptedMsgFromServer = clientSharedKeyCommunication.decrypt(message);
+
         } catch (NoSuchPaddingException e) {
             log.error(e);
         } catch (NoSuchAlgorithmException e) {
