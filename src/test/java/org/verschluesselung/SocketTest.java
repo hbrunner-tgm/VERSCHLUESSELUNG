@@ -26,7 +26,7 @@ public class SocketTest {
         final ExecutorService executorService1 = Executors.newSingleThreadExecutor();
         executorService1.execute(server);
         //Start the Client
-        ConnectClient client = new ConnectClient(8888, "localhost");
+        ConnectClient client = new ConnectClient(8888, "localhost", true);
         final ExecutorService executorService2 = Executors.newSingleThreadExecutor();
         executorService2.execute(client);
         //Wait until it is finished,- this could be done in a better way
