@@ -26,20 +26,20 @@ public class ConnectClient implements Runnable {
     private int port;
     private String host;
 
-    private boolean tf;
+    private boolean secure;
     private PublicKey publicKey;
     private SharedKeyCommunication clientSharedKeyCommunication;
 
-    public ConnectClient(int port, String host, boolean tf) {
+    public ConnectClient(int port, String host, boolean secure) {
         this.port = port;
         this.host = host;
-        this.tf= tf;
+        this.secure = secure;
     }
 
     @Override
     public void run() {
 
-        if(tf == false) {
+        if(secure == false) {
             try {
                 SocketChannel sChannel = SocketChannel.open();
                 sChannel.configureBlocking(true);
