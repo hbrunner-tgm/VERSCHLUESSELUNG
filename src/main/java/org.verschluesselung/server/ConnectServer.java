@@ -27,6 +27,7 @@ public class ConnectServer implements Runnable {
     private int port;
     private String host, text;
     private Message message;
+    private boolean secure;
 
     private AsyncKeyCommunication serverAsyncKey;
     private SharedKeyCommunication serverSharedKeyCommunication;
@@ -38,9 +39,10 @@ public class ConnectServer implements Runnable {
         this.port= port;
         this.text= message;
         this.host= host;
+        this.secure= secure;
 
         if(!secure)
-            this.message= this.secure(message);
+            log.info("unsecure connection statrted");
         else
             this.message= new Message(message, null);
 
@@ -50,6 +52,35 @@ public class ConnectServer implements Runnable {
     @Override
     public void run() {
         log.info("Sender Start");
+
+        if(secure == false) {
+            try {
+                ServerSocketChannel ssChannel = ServerSocketChannel.open();
+                ssChannel.configureBlocking(true);
+                ssChannel.socket().bind(new InetSocketAddress(port));
+
+                while (true) {
+                    log.info("Waiting for client");
+                    sChannel = ssChannel.accept();
+
+                    ObjectOutputStream oos = new ObjectOutputStream(sChannel.socket().getOutputStream());
+
+                    oos.writeObject(text); // the public key
+
+                    if (sChannel.isOpen()) {
+                        break;
+                    }
+                    oos.close();
+                }
+                log.info("Message sent");
+
+                ssChannel.close();
+                ssChannel = null;
+            }catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
 
         try {
 
@@ -180,4 +211,5 @@ public class ConnectServer implements Runnable {
 
         return new Message("message", transmittedMsgFromServer);
     }
+
 }

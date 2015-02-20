@@ -15,6 +15,7 @@ public class Start {
 
         // Start the threads
         Executors.newSingleThreadExecutor().execute(new ConnectServer(8888, "localhost", "Hello, who are you?", true));
-        Executors.newSingleThreadExecutor().execute(new ConnectClient(8888, "localhost"));
+        Executors.newSingleThreadExecutor().execute(new ConnectClient(8888, "localhost", true));
+
     }
 }

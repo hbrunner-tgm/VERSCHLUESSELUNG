@@ -26,16 +26,46 @@ public class ConnectClient implements Runnable {
     private int port;
     private String host;
 
+    private boolean tf;
     private PublicKey publicKey;
     private SharedKeyCommunication clientSharedKeyCommunication;
 
-    public ConnectClient(int port, String host) {
+    public ConnectClient(int port, String host, boolean tf) {
         this.port = port;
         this.host = host;
+        this.tf= tf;
     }
 
     @Override
     public void run() {
+
+        if(tf == false) {
+            try {
+                SocketChannel sChannel = SocketChannel.open();
+                sChannel.configureBlocking(true);
+                if (sChannel.connect(new InetSocketAddress(host, port))) {
+
+                    ObjectInputStream ois = new ObjectInputStream(sChannel.socket().getInputStream());
+
+                    String s = (String) ois.readObject();
+
+                    log.info("Plain Message recived: " + s);
+
+                    if (sChannel.finishConnect()) {
+                        sChannel = null;
+                    }
+                    ois.close();
+                }
+
+            } catch (ClassNotFoundException e) {
+                log.error(e);
+            } catch (IOException e) {
+                log.error(e);
+            }
+            System.exit(1);
+            return;
+        }
+
         log.info("Receiver Start");
 
         try {
@@ -158,4 +188,5 @@ public class ConnectClient implements Runnable {
         }
         return new String(decryptedMsgFromServer);
     }
+
 }
