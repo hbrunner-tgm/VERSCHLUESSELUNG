@@ -17,7 +17,10 @@ public class Start {
             final ExecutorService executorService1 = Executors.newSingleThreadExecutor();
             final ExecutorService executorService2 = Executors.newSingleThreadExecutor();
 
-            if (args.length == 0) {
+            if (args.length == 1) {
+                if (!args[0].equalsIgnoreCase("sniffer"))throw new Exception("Invalid Parameters");
+                Sniffer.main(new String[0]);
+            } else if (args.length == 0) {
                 System.out.println("Executing the default Configuration- type help for a list of available commands");
                 System.out.println("Starting Server and client at localhost with port 8888");
                 String secretMessage = "SecretMessage";
@@ -62,6 +65,7 @@ public class Start {
             System.out.println("Example:");
             System.out.println("client 8888 localhost Y");
             System.out.println("server 8888 localhost Message Y");
+            System.out.println("sniffer");
         }
     }
 }
