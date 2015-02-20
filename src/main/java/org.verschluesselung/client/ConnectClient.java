@@ -35,10 +35,8 @@ public class ConnectClient implements Runnable {
     private SharedKeyCommunication clientSharedKeyCommunication;
 
     public ConnectClient(int port, String host) {
-
         this.port = port;
         this.host = host;
-
     }
 
     @Override

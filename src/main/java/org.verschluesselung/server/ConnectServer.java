@@ -32,9 +32,6 @@ public class ConnectServer implements Runnable {
     private String host= "localhost", text;
     private Message message;
 
-    private Message m;
-    private KeyPair MyKeyPair;
-
     private AsyncKeyCommunication serverAsyncKey;
     private SharedKeyCommunication serverSharedKeyCommunication;
 
@@ -102,7 +99,7 @@ public class ConnectServer implements Runnable {
             sChannel.close();
 
             log.info("Message will be send");
-            //sChannel= null;
+
             ssChannel = ServerSocketChannel.open();
             ssChannel.configureBlocking(true);
             ssChannel.socket().bind(new InetSocketAddress(port+2));
@@ -186,6 +183,4 @@ public class ConnectServer implements Runnable {
 
         return new Message("message", transmittedMsgFromServer);
     }
-
-
 }
