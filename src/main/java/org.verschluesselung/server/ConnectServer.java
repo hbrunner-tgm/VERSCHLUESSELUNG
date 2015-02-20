@@ -7,17 +7,13 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.security.*;
-import java.util.Base64;
 
 import org.apache.log4j.*;
-import org.apache.log4j.or.ThreadGroupRenderer;
 import org.verschluesselung.encryptionHelpers.AsyncKeyCommunication;
 import org.verschluesselung.encryptionHelpers.SharedKeyCommunication;
 import org.verschluesselung.verschluesselung.Message;
 
 import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * This class is used to create a server-socket connection

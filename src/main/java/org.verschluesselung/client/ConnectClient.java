@@ -4,16 +4,11 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-
 import java.security.*;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 
 import org.apache.log4j.Logger;
 
 import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.verschluesselung.encryptionHelpers.AsyncKeyCommunication;
 import org.verschluesselung.encryptionHelpers.SharedKeyCommunication;
