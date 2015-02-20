@@ -1,14 +1,12 @@
 package org.verschluesselung;
 
 import org.junit.Assert;
-import org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.StandardOutputStreamLog;
 import org.verschluesselung.client.ConnectClient;
 import org.verschluesselung.server.ConnectServer;
 
-import java.security.PublicKey;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,9 +20,9 @@ public class SocketTest {
 
     @Test
     public void socketTest() throws Exception {
-        String secretMessage="SecretMessage";
+        String secretMessage = "SecretMessage";
         //Start the Server
-        ConnectServer server = new ConnectServer(8888, "localhost",secretMessage, true);
+        ConnectServer server = new ConnectServer(8888, "localhost", secretMessage, true);
         final ExecutorService executorService1 = Executors.newSingleThreadExecutor();
         executorService1.execute(server);
         //Start the Client
