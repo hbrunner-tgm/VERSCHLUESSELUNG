@@ -2,22 +2,21 @@ package org.verschluesselung.client;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import java.security.KeyFactory;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
-import java.security.SecureRandom;
 import java.util.Base64;
 
 import org.apache.log4j.Logger;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.verschluesselung.encryptionHelpers.AsyncKeyCommunication;
+import org.verschluesselung.encryptionHelpers.SharedKeyCommunication;
 import org.verschluesselung.verschluesselung.Message;
 
 /**
@@ -32,11 +31,12 @@ public class ConnectClient implements Runnable {
     private int port;
     private String host;
 
-    public ConnectClient(int port, String host) {
+    private PublicKey publicKey;
+    private SharedKeyCommunication clientSharedKeyCommunication;
 
+    public ConnectClient(int port, String host) {
         this.port = port;
         this.host = host;
-
     }
 
     @Override
@@ -45,29 +45,69 @@ public class ConnectClient implements Runnable {
 
         try {
 
-            SocketChannel sChannel= SocketChannel.open();
+            SocketChannel sChannel = SocketChannel.open();
             sChannel.configureBlocking(true);
             if (sChannel.connect(new InetSocketAddress(host, port))) {
 
                 ObjectInputStream ois = new ObjectInputStream(sChannel.socket().getInputStream());
 
                 Message s = (Message) ois.readObject();
-                if (s.getKeyPub() == null) {
-                    log.info("Message is: " + s.getMessage());
-                }
 
-                String en= null;
-                log.info("Message decrypted: " + s.getMessage());
-                if(s.getKeyPub()!=null) {
-                    log.info("Message decrypted: " + s.getMessage());
-                    en= this.encrypt(s.getKeyPub(), s.getMessage(), this.decodeSecret(s.getSk()));
-                } else {
-                    en= s.getMessage();
+                if (s.getMessage().equals("pubkey")) {
+                    publicKey = (PublicKey) s.getObject();
+                    log.info("Publickey recived");
                 }
-                log.info("Message encrypted: " + en);
+                if (sChannel.finishConnect()) {
+                    sChannel = null;
+                }
+                ois.close();
             }
 
-            log.info("End Receiver");
+            ServerSocketChannel ssChannel = ServerSocketChannel.open();
+            ssChannel.configureBlocking(true);
+            ssChannel.socket().bind(new InetSocketAddress(port +1));
+
+            while (true) {
+                sChannel = ssChannel.accept();
+
+                ObjectOutputStream oos = new ObjectOutputStream(sChannel.socket().getOutputStream());
+                log.info("Send the response");
+                oos.writeObject(this.response(publicKey)); // the public key
+
+                if (sChannel.isOpen())
+                    break;
+
+                oos.close();
+            }
+
+            ssChannel.close();
+            ssChannel = null;
+
+            try {
+                Thread.sleep(1000l);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            sChannel = SocketChannel.open();
+            sChannel.configureBlocking(true);
+            if (sChannel.connect(new InetSocketAddress(host, port + 2))) {
+
+                ObjectInputStream ois = new ObjectInputStream(sChannel.socket().getInputStream());
+
+                Message s = (Message) ois.readObject();
+
+                if (s.getMessage().equals("message")) {
+
+                    byte[] en= (byte[]) s.getObject();
+
+                    log.info("Encrypted Message received: " + en);
+
+                    String message = this.decrypt(en);
+                    log.info("Uncrypted Message received: " + message);
+                }
+            }
+
         } catch (ClassNotFoundException e) {
             log.error(e);
         } catch (IOException e) {
@@ -78,45 +118,49 @@ public class ConnectClient implements Runnable {
 
     }
 
-    public PublicKey decodeKey(byte[] pubKey) throws Exception {
-        X509EncodedKeySpec ks = new X509EncodedKeySpec(pubKey);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        return kf.generatePublic(ks);
+    public Message response(PublicKey publicKey) {
+        Message m = null;
+
+        //Client
+        //The client generates a sharedKey that will be encrypted and sent to the server
+        AsyncKeyCommunication clientAsyncKey = new AsyncKeyCommunication(publicKey);
+        clientSharedKeyCommunication = null;
+        try {
+            clientSharedKeyCommunication = new SharedKeyCommunication();
+        } catch (NoSuchAlgorithmException e) {
+            log.error(e);
+        }
+        //The client encrypts the shared key with the public key
+        byte[] clientSharedKey = clientSharedKeyCommunication.getKey();
+        byte[] encryptedSharedKey = new byte[0];
+        try {
+            encryptedSharedKey = clientAsyncKey.encrypt(clientSharedKey);
+        } catch (Exception e) {
+            log.error(e);
+        }
+        //The client transmits the encrypted shared key to the server
+        byte[] transmittedEncryptedSharedKey = encryptedSharedKey;
+
+        return new Message("sharedkey", transmittedEncryptedSharedKey);
     }
 
-    public SecretKey decodeSecret(String sk) {
-        byte[] decodedKey = Base64.getDecoder().decode(sk);
-        // rebuild key using SecretKeySpec
-        return new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
-    }
-
-    public String encrypt(byte[] pubKey, String message, SecretKey sk) throws Exception {
-        PublicKey publicKey = this.decodeKey(pubKey);
-
-        SecureRandom random;
-
-        // generates synchronous public key
-        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-        keyGen.init(128);
-        SecretKey secretKey = keyGen.generateKey();
-
-        // uses public key from client to encrypt synchronous public key
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        byte[] encryptedData = cipher.doFinal(secretKey.getEncoded());
-
-        // use the AES key for encrypting a message
-        cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        byte[] iv = new byte[16];
-        random = new SecureRandom();
-        random.nextBytes(iv);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-        cipher.init(Cipher.ENCRYPT_MODE, sk, ivParameterSpec);
-        encryptedData = cipher.doFinal(message.getBytes("UTF-8"));
-        String encrypted = new String(encryptedData);
-
-        log.info("encrypted aes message: " + encrypted);
-
-        return encrypted;
+    public String decrypt(byte[] message) {
+        //Client
+        //The client decrypts the message
+        byte[] decryptedMsgFromServer = new byte[0];
+        try {
+            decryptedMsgFromServer = clientSharedKeyCommunication.decrypt(message);
+        } catch (NoSuchPaddingException e) {
+            log.error(e);
+        } catch (NoSuchAlgorithmException e) {
+            log.error(e);
+        } catch (InvalidKeyException e) {
+            log.error(e);
+        } catch (BadPaddingException e) {
+            log.error(e);
+        } catch (IllegalBlockSizeException e) {
+            log.error(e);
+        }
+        return new String(decryptedMsgFromServer);
     }
 }
