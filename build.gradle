@@ -10,10 +10,15 @@ mainClassName = 'org.verschluesselung.Start'
 
 repositories {
     mavenCentral()
+//    maven {
+//        url "http://clojars.org/repo/jpcap/jpcap"
+//    }
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.9'
     testCompile 'com.github.stefanbirkner:system-rules:1.8.0'
     compile 'log4j:log4j:1.2.17'
+//    compile 'jpcap:jpcap:0.1.18-002'
+    compile fileTree(dir: 'libs', include: '*.jar')
 }
