@@ -43,7 +43,7 @@ public class ConnectServer implements Runnable {
         this.text= message;
         this.host= host;
 
-        if(secure)
+        if(!secure)
             this.message= this.secure(message);
         else
             this.message= new Message(message, null);
