@@ -29,7 +29,7 @@ public class ConnectServer implements Runnable {
     private static Logger log= Logger.getLogger(ConnectServer.class.getName());
 
     private int port;
-    private String host= "localhost", text;
+    private String host, text;
     private Message message;
 
     private AsyncKeyCommunication serverAsyncKey;
@@ -37,10 +37,11 @@ public class ConnectServer implements Runnable {
 
     private SocketChannel sChannel;
 
-    public ConnectServer(int port, String message, boolean secure) {
+    public ConnectServer(int port, String host, String message, boolean secure) {
 
         this.port= port;
         this.text= message;
+        this.host= host;
 
         if(secure)
             this.message= this.secure(message);
